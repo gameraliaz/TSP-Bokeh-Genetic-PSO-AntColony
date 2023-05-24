@@ -6,6 +6,47 @@ class Chromosome:
 
     def __init__(self, gene):
         self.gene = gene
+        self.fitness = Chromosome.calculate_fitness(self.gene)
+
+    def crossover(self,**arg):
+        if arg['type']=='single_point':
+            return self.crossover_single_point(arg['other_chromosome'])
+        elif arg['type']=='two_point':
+            return self.crossover_two_point(arg['other_chromosome'])
+        elif arg['type']=='uniforms':
+            return self.crossover_uniforms(arg['other_chromosome'])
+        elif arg['type']=='pmx':
+            return self.crossover_pmx(arg['other_chromosome'])
+        elif arg['type']=='ox':
+            return self.crossover_ox(arg['other_chromosome'])
+        elif arg['type']=='cx':
+            return self.crossover_cx(arg['other_chromosome'])
+
+    def mutation(self,**arg):
+        if arg['type']=='all':
+            self.mutation_all()
+            self.fitness = Chromosome.calculate_fitness(self.gene)
+        elif arg['type']=='some':
+            if 'k' in arg.keys:
+                self.mutation_some(arg['k'])
+            else:
+                self.mutation_some()
+            self.fitness = Chromosome.calculate_fitness(self.gene)
+        elif arg['type']=='swap':
+            if 'k' in arg.keys:
+                self.mutation_swap(arg['k'])
+            else:
+                self.mutation_swap()
+            self.fitness = Chromosome.calculate_fitness(self.gene)
+        elif arg['type']=='insert':
+            self.mutation_insert()
+            self.fitness = Chromosome.calculate_fitness(self.gene)
+        elif arg['type']=='inversion':
+            self.mutation_inversion()
+            self.fitness = Chromosome.calculate_fitness(self.gene)
+        elif arg['type']=='scrumble':
+            self.mutation_scrumble()
+            self.fitness = Chromosome.calculate_fitness(self.gene)
 
     def crossover_single_point(self, other_chromosome):
         crossover_point = random.randint(1, len(self.gene) - 1)
@@ -114,7 +155,7 @@ class Chromosome:
             raise ValueError("Mutation rate is not set")
     
     #only for binery
-    def mutation_some(self,k):
+    def mutation_some(self,k=1):
         if Chromosome.mutation_rate is not None:
             A = random.choices(range(len(self.gene)),k=k)
             for i in A:
@@ -208,16 +249,55 @@ class Chromosome:
         return offspring_gene
 
     @staticmethod
-    def calculate_fitness(chromosome):
+    def calculate_fitness(gene):
         if Chromosome.fitness_function is not None:
-            return Chromosome.fitness_function(chromosome)
+            return Chromosome.fitness_function(gene)
         else:
             raise ValueError("Fitness function is not set")
 
-
 class Genetic:
-    def __init__(self,fitness_function,population_size,mutation_rate) -> None:
+    def __init__(self,fitness_function,population_size,
+                mutation_rate,random_gen_maker,crossover_type,
+                mutation_type,isbest_min,selection_function,
+                replacement_function) -> None:
         self.population_site = population_size
         Chromosome.fitness_function = fitness_function
         Chromosome.mutation_rate = mutation_rate
-        
+        self.generation = 0
+        self.randome_gene_maker = random_gen_maker
+        self.mutation_type = mutation_type
+        self.crossover_type = crossover_type
+        self.best = None
+        self.isbest_min = isbest_min
+        self.selection_function = selection_function
+        self.replacement_function = replacement_function
+    
+    def Execute(self):
+        population = [Chromosome(self.randome_gene_maker()) for i in range(self.population_site)]
+        while True:
+            if self.isbest_min:
+                self.best = min(population,key=lambda x:x.fitness)
+            else:
+                self.best = max(population,key=lambda x:x.fitness)
+            yield population
+
+            # Generate new population
+            new_generation = []
+            selected_chromosomes = self.selection_function(population,self.population_size)
+
+            for i in range(0, len(selected_chromosomes), 2):
+                chromosome1 = selected_chromosomes[i]
+                chromosome2 = selected_chromosomes[i + 1]
+
+                self.crossover_type.update({'other_chromosome':chromosome2})
+
+                offspring1, offspring2 = chromosome1.crossover(self.crossover_type)
+
+                offspring1.mutation(self.mutation_type)
+                offspring2.mutation(self.mutation_type)
+
+                new_generation += [offspring1, offspring2]
+
+            # Apply replacement
+            population = self.replacement_function(population, new_generation)
+            self.generation += 1
