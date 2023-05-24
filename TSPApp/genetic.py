@@ -337,7 +337,7 @@ class Genetic:
             while(len(A)<len(oldgeneration)):
                 A.append(random.choice(newgeneration))
             return A
-        elif self.replacement_function_type == 'best-h':
+        elif self.replacement_function_type == 'best-half':
             ot1 = sorted(oldgeneration,key=lambda x:x.fitness)
             ot2 = sorted(newgeneration,key=lambda x:x.fitness)
             A = []
@@ -379,9 +379,9 @@ class Genetic:
         population = list(map(lambda x:Chromosome(x),population))
         while True:
             if self.isbest_min:
-                self.best = min(population,key=lambda x:x.fitness)
+                self.best = min(self.best,min(population,key=lambda x:x.fitness))
             else:
-                self.best = max(population,key=lambda x:x.fitness)
+                self.best = max(self.best,max(population,key=lambda x:x.fitness))
             yield population
 
             # Generate new population
