@@ -5,7 +5,8 @@ from bokeh.layouts import column, row
 from bokeh.models import FileInput, Tabs,TabPanel,Label,Slider,NumericInput
 from bokeh.plotting import figure,from_networkx
 from bokeh.palettes import Category20_20
-import random as rand
+import random 
+from genetic import Chromosome , Genetic
 
 # Controllers
 
@@ -19,7 +20,7 @@ file_input.multiple = False
 graph_box = row(figure())
 
 mutation_rate_slider = Slider(start=0, end=1, value=0.01, step=0.01, title="Mutation Rate")
-population_numeric_input = NumericInput(value=50, low=1, high=1000, title="Population :")
+population_numeric_input = NumericInput(value=50, low=1, high=1000, title="Population Size:")
 genetic_tab_column = column(row(mutation_rate_slider,population_numeric_input),figure())
 
 genetic_algo_tab = TabPanel(title="Genetic Algorithm", child=genetic_tab_column)
@@ -30,18 +31,42 @@ algorithm_tabs = Tabs(tabs=[genetic_algo_tab, pso_algo_tab, ant_colony_tab])
 
 root_page.add_root(column(file_input,row(graph_box, algorithm_tabs)))
 
+G = None
 
+#Algorithms
+def fitness_function(gene):
+    global G
+    fitness = 0
+    for i,v in enumerate(gene):
+        try:
+            if i == len(gene)-1:
+                fitness+= G.adj[v][gene[0]]['w']
+            else:
+                fitness+= G.adj[v][gene[i+1]]['w']
+        except:
+            try:
+                fitness += 1000000
+            except:
+                pass
+    return fitness
 
+def random_gene_maker():
+    return random.sample(list(G.nodes()),k=len(G))
+
+# genetic = Genetic(fitness_function=fitness_function,population_size=100,
+#         mutation_rate=0.01,random_gen_maker=random_gene_maker,
+#         crossover_type={'type':'pmx'},mutation_type={'type':'scrumble'},isbest_min=True,
+#         selection_function=selection_function,replacement_function=replacement_function,
+#         selection_size=50)
 
 #Events:
-
 def handle_file_upload(attr, old, new):
+    global G
     selected_file = new
     if selected_file:
         df = pd.read_csv(selected_file, names=['n1', 'n2', 'w'])
         # Assuming the CSV file has columns 'n1', 'n2', and 'w'
         G = nx.from_pandas_edgelist(df, 'n1', 'n2', edge_attr='w', create_using=nx.Graph())
-        
         # Extract edge weights as a list
         edge_weights = df['w'].tolist()
         
@@ -60,11 +85,11 @@ def handle_file_upload(attr, old, new):
         graph.node_renderer.data_source.data['index'] = list(G.nodes())
         color=[]
         if not len(G)>20:
-            color = rand.choices(Category20_20,k=len(G))
+            color = random.sample(Category20_20,k=len(G))
         else :
             for i in range(len(G)//20):
                 color += Category20_20
-            color = rand.choices(Category20_20,k=(len(G)-1)%20)
+            color = random.sample(Category20_20,k=(len(G)-1)%20)
         graph.node_renderer.data_source.data['colors'] = color
 
         graph.node_renderer.glyph.update(size=20, fill_color="colors")

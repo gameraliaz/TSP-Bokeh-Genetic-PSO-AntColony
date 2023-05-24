@@ -1,4 +1,7 @@
 import random
+import pandas as pd
+from numpy import Inf
+import networkx as nx
 
 class Chromosome:
     fitness_function = None
@@ -8,43 +11,43 @@ class Chromosome:
         self.gene = gene
         self.fitness = Chromosome.calculate_fitness(self.gene)
 
-    def crossover(self,**arg):
-        if arg['type']=='single_point':
-            return self.crossover_single_point(arg['other_chromosome'])
-        elif arg['type']=='two_point':
-            return self.crossover_two_point(arg['other_chromosome'])
-        elif arg['type']=='uniforms':
-            return self.crossover_uniforms(arg['other_chromosome'])
-        elif arg['type']=='pmx':
-            return self.crossover_pmx(arg['other_chromosome'])
-        elif arg['type']=='ox':
-            return self.crossover_ox(arg['other_chromosome'])
-        elif arg['type']=='cx':
-            return self.crossover_cx(arg['other_chromosome'])
+    def crossover(self,argc):
+        if argc['type']=='single_point':
+            return self.crossover_single_point(argc['other_chromosome'])
+        elif argc['type']=='two_point':
+            return self.crossover_two_point(argc['other_chromosome'])
+        elif argc['type']=='uniforms':
+            return self.crossover_uniforms(argc['other_chromosome'])
+        elif argc['type']=='pmx':
+            return self.crossover_pmx(argc['other_chromosome'])
+        elif argc['type']=='ox':
+            return self.crossover_ox(argc['other_chromosome'])
+        elif argc['type']=='cx':
+            return self.crossover_cx(argc['other_chromosome'])
 
-    def mutation(self,**arg):
-        if arg['type']=='all':
+    def mutation(self,argc):
+        if argc['type']=='all':
             self.mutation_all()
             self.fitness = Chromosome.calculate_fitness(self.gene)
-        elif arg['type']=='some':
-            if 'k' in arg.keys:
-                self.mutation_some(arg['k'])
+        elif argc['type']=='some':
+            if 'k' in argc.keys():
+                self.mutation_some(argc['k'])
             else:
                 self.mutation_some()
             self.fitness = Chromosome.calculate_fitness(self.gene)
-        elif arg['type']=='swap':
-            if 'k' in arg.keys:
-                self.mutation_swap(arg['k'])
+        elif argc['type']=='swap':
+            if 'k' in argc.keys():
+                self.mutation_swap(argc['k'])
             else:
                 self.mutation_swap()
             self.fitness = Chromosome.calculate_fitness(self.gene)
-        elif arg['type']=='insert':
+        elif argc['type']=='insert':
             self.mutation_insert()
             self.fitness = Chromosome.calculate_fitness(self.gene)
-        elif arg['type']=='inversion':
+        elif argc['type']=='inversion':
             self.mutation_inversion()
             self.fitness = Chromosome.calculate_fitness(self.gene)
-        elif arg['type']=='scrumble':
+        elif argc['type']=='scrumble':
             self.mutation_scrumble()
             self.fitness = Chromosome.calculate_fitness(self.gene)
 
@@ -85,19 +88,22 @@ class Chromosome:
                 gene2.append(self.gene[i])
 
     def crossover_pmx(self, other_chromosome):
-        crossover_point1 = random.randint(0, len(self.gene) - 2)
-        crossover_point2 = random.randint(crossover_point1 + 1, len(self.gene) - 1)
+        try:
+            crossover_point1 = random.randint(0, len(self.gene) - 2)
+            crossover_point2 = random.randint(crossover_point1 + 1, len(self.gene) - 1)
 
-        gene1 = self.gene
-        gene2 = other_chromosome.gene
+            gene1 = self.gene
+            gene2 = other_chromosome.gene
 
-        offspring_gene1 = self.__pmx_crossover(gene1, gene2, crossover_point1, crossover_point2)
-        offspring_gene2 = self.__pmx_crossover(gene2, gene1, crossover_point1, crossover_point2)
+            offspring_gene1 = self.__pmx_crossover(gene1, gene2, crossover_point1, crossover_point2)
+            offspring_gene2 = self.__pmx_crossover(gene2, gene1, crossover_point1, crossover_point2)
 
-        chromosome1 = Chromosome(offspring_gene1)
-        chromosome2 = Chromosome(offspring_gene2)
+            chromosome1 = Chromosome(offspring_gene1)
+            chromosome2 = Chromosome(offspring_gene2)
 
-        return chromosome1, chromosome2
+            return chromosome1, chromosome2
+        except:
+            print("ERRRRRRRRRRRRRR1")
 
     def crossover_ox(self, other_chromosome):
         crossover_point1 = random.randint(0, len(self.gene) - 2)
@@ -115,32 +121,40 @@ class Chromosome:
         return chromosome1, chromosome2
 
     def crossover_cx(self, other_chromosome):
-        offspring_gene1 = [None for i in range(len(self.gene))]
-        offspring_gene2 = [None for i in range(len(other_chromosome.gene))]
-
+        offspring_gene1 = [None for _ in range(len(self.gene))]
+        offspring_gene2 = [None for _ in range(len(other_chromosome.gene))]
         visited_indices = set()
 
         current_index = 0
         while True:
             if current_index in visited_indices:
-                break
+                # If the current index has already been visited, find the next available index
+                current_index = next(i for i in range(len(self.gene)) if i not in visited_indices)
             visited_indices.add(current_index)
             offspring_gene1[current_index] = self.gene[current_index]
             offspring_gene2[current_index] = other_chromosome.gene[current_index]
-            current_index = self.gene.index(other_chromosome.gene[current_index])
-            if current_index == next(i for i in range(len(self.gene)) if i not in visited_indices):
+
+            # Check if the current index exists in the other chromosome's gene
+            if other_chromosome.gene[current_index] in self.gene:
+                current_index = self.gene.index(other_chromosome.gene[current_index])
+            else:
+                # If the current index doesn't exist, find the next available index
+                current_index = next(i for i in range(len(self.gene)) if i not in visited_indices)
+
+            # Break the loop if we've returned to the starting index
+            if current_index == 0:
                 break
 
-        for i,v in enumerate(offspring_gene1):
-            if v==None:
+        for i in range(len(offspring_gene1)):
+            if offspring_gene1[i] is None:
                 offspring_gene1[i] = other_chromosome.gene[i]
                 offspring_gene2[i] = self.gene[i]
-
 
         chromosome1 = Chromosome(offspring_gene1)
         chromosome2 = Chromosome(offspring_gene2)
 
         return chromosome1, chromosome2
+
 
     #only for binery
     def mutation_all(self):
@@ -197,7 +211,7 @@ class Chromosome:
                 return
             point1 = random.randint(0, len(self.gene) - 2)
             point2 = random.randint(point1 + 1, len(self.gene) - 1)
-            self.gene[point1:point2+1] = self.gene[point2:point1-1:-1]
+            self.gene[point1:point2+1] = self.gene[point1:point2+1][::-1]
         else:
             raise ValueError("Mutation rate is not set")
 
@@ -211,30 +225,27 @@ class Chromosome:
         else:
             raise ValueError("Mutation rate is not set")
 
-    @staticmethod
-    def __pmx_crossover(gene1, gene2, crossover_point1, crossover_point2):
-        offspring_gene = [None for i in range(len(gene1))]
-        offspring_gene[crossover_point1:crossover_point2+1] = gene1[crossover_point1:crossover_point2+1]
+    def __pmx_crossover(self,gene1, gene2, crossover_point1, crossover_point2):
+        try:
+            offspring_gene = [None for i in range(len(gene1))]
+            offspring_gene[crossover_point1:crossover_point2+1] = gene1[crossover_point1:crossover_point2+1]
 
-        for i in range(crossover_point1, crossover_point2+1):
-            if gene2[i] not in offspring_gene:
-                value = gene2[i]
-                index = i
+            index2 = 0
+            for i in range(len(gene1)):
+                if offspring_gene[i] == None:
+                    while True:
+                        if gene2[index2] not in offspring_gene:
+                            offspring_gene[i] = gene2[index2]
+                            index2 += 1
+                            break
+                        index2 += 1
+                            
 
-                while gene1[index] in gene2[crossover_point1:crossover_point2+1]:
-                    index = gene2.index(gene1[index])
-                    value = gene1[index]
+            return offspring_gene
+        except:
+            print("ERRRRRRR")
 
-                offspring_gene[index] = value
-
-        for i in range(len(gene1)):
-            if offspring_gene[i] == None:
-                offspring_gene[i] = gene2[i]
-
-        return offspring_gene
-    
-    @staticmethod
-    def __ox_crossover(gene1, gene2, crossover_point1, crossover_point2):
+    def __ox_crossover(self,gene1, gene2, crossover_point1, crossover_point2):
         offspring_gene = [None for i in range(len(gene1))]
         offspring_gene[crossover_point1:crossover_point2+1] = gene1[crossover_point1:crossover_point2+1]
 
@@ -255,12 +266,15 @@ class Chromosome:
         else:
             raise ValueError("Fitness function is not set")
 
+    def __eq__(self, other):
+        return self.gene == other.gene
+
 class Genetic:
     def __init__(self,fitness_function,population_size,
                 mutation_rate,random_gen_maker,crossover_type,
-                mutation_type,isbest_min,selection_function,
-                replacement_function) -> None:
-        self.population_site = population_size
+                mutation_type,isbest_min,selection_function_type,
+                replacement_function_type,selection_size) -> None:
+        self.population_size = population_size
         Chromosome.fitness_function = fitness_function
         Chromosome.mutation_rate = mutation_rate
         self.generation = 0
@@ -269,11 +283,100 @@ class Genetic:
         self.crossover_type = crossover_type
         self.best = None
         self.isbest_min = isbest_min
-        self.selection_function = selection_function
-        self.replacement_function = replacement_function
+        self.selection_type = selection_function_type
+        self.replacement_function_type = replacement_function_type
+        self.selection_size = selection_size
     
+
+    def selection_function(self,population):
+        if self.selection_type=='random':
+            return random.sample(population,self.selection_size)
+        elif self.selection_type=='best':
+            return sorted(population,key=lambda x:x.fitness)[:self.selection_function]
+        elif self.selection_type == 'roulette':
+            while len(selected)<self.selection_size:
+                selected = []
+                r = random.random()
+                h = 0.0
+                hn = sum(map(lambda x:x.fitness,population))
+                for i in population:
+                    h+=i.fitness/hn
+                    if self.isbest_min:
+                        if h<=r:
+                            if i in selected:
+                                continue
+                            selected.append(i)
+                    else:
+                        if h>=r:
+                            if i in selected:
+                                continue
+                            selected.append(i)
+
+    def replacement_function(self,oldgeneration,newgeneration):
+        if self.replacement_function_type == 'new':
+            A = newgeneration
+            index = 0
+            while len(A)<len(oldgeneration):
+                rndch=random.choice(oldgeneration)
+                if rndch not in A:
+                    A.append(rndch)
+                    index = 0
+                else:
+                    index += 1
+                if index>=50:
+                    A.append(rndch)
+            return newgeneration 
+        elif self.replacement_function_type == 'best':
+            A = []
+            outed = sorted(oldgeneration + newgeneration , key=lambda x:x.fitness)
+            for i in outed:
+                if i not in A:
+                    A.append(i)
+                    if len(A)==len(oldgeneration):
+                        break
+            while(len(A)<len(oldgeneration)):
+                A.append(random.choice(newgeneration))
+            return A
+        elif self.replacement_function_type == 'best-h':
+            ot1 = sorted(oldgeneration,key=lambda x:x.fitness)
+            ot2 = sorted(newgeneration,key=lambda x:x.fitness)
+            A = []
+            for i in ot1:
+                if i not in A:
+                    A.append(i)
+                    if len(A)==len(oldgeneration)//2:
+                        break
+            index = 0
+            for i in ot2:
+                if i not in A:
+                    A.append(i)
+                    index == 0
+                    if len(A)==len(oldgeneration):
+                        break
+                else:
+                    index += 1
+                    if index>=20:
+                        A.append(i)
+            while(len(A)<len(oldgeneration)):
+                A.append(random.choice(newgeneration))
+            return A
+        elif self.replacement_function_type == 'new-best-old':
+            ot1 = sorted(oldgeneration,key=lambda x:x.fitness)
+            A = newgeneration
+            for i in ot1:
+                if i not in A:
+                    A.append(i)
+            while(len(A)<len(oldgeneration)):
+                A.append(random.choice(newgeneration))
+            return A
+
     def Execute(self):
-        population = [Chromosome(self.randome_gene_maker()) for i in range(self.population_site)]
+        population = []
+        while len(population)<self.population_size:
+            rndgene = self.randome_gene_maker()
+            if rndgene not in population:
+                population.append(rndgene)
+        population = list(map(lambda x:Chromosome(x),population))
         while True:
             if self.isbest_min:
                 self.best = min(population,key=lambda x:x.fitness)
@@ -283,20 +386,26 @@ class Genetic:
 
             # Generate new population
             new_generation = []
-            selected_chromosomes = self.selection_function(population,self.population_size)
+            selected_chromosomes = self.selection_function(population)
 
             for i in range(0, len(selected_chromosomes), 2):
-                chromosome1 = selected_chromosomes[i]
-                chromosome2 = selected_chromosomes[i + 1]
+                for p in range(100):
+                    chromosome1 = selected_chromosomes[i]
+                    chromosome2 = selected_chromosomes[i + 1]
 
-                self.crossover_type.update({'other_chromosome':chromosome2})
+                    self.crossover_type.update({'other_chromosome':chromosome2})
 
-                offspring1, offspring2 = chromosome1.crossover(self.crossover_type)
+                    offspring1, offspring2 = chromosome1.crossover(self.crossover_type)
 
-                offspring1.mutation(self.mutation_type)
-                offspring2.mutation(self.mutation_type)
+                    offspring1.mutation(self.mutation_type)
+                    offspring2.mutation(self.mutation_type)
 
-                new_generation += [offspring1, offspring2]
+                    for j in new_generation:
+                        if j.gene == offspring1.gene or j.gene == offspring2.gene:
+                            break
+                    else:
+                        new_generation += [offspring1, offspring2]
+                        break
 
             # Apply replacement
             population = self.replacement_function(population, new_generation)
