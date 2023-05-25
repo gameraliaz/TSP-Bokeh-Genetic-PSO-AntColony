@@ -298,24 +298,38 @@ class Genetic:
             return sorted(population,key=lambda x:x.fitness)[:self.selection_size]
         elif self.selection_type == 'roulette':
             selected = []
-            while len(selected)<self.selection_size:
-                r = random.random()
-                h = 0.0
-                hn = sum(map(lambda x:x.fitness,population))
-                for i in population:
-                    h+=i.fitness/hn
-                    if self.isbest_min:
-                        if h<=r:
-                            if i in selected:
-                                continue
-                            selected.append(i)
-                    else:
-                        if h>=r:
-                            if i in selected:
-                                continue
-                            selected.append(i)
-            return selected
+            total_fitness = sum(1 / chromosome.fitness for chromosome in population)  # Invert fitness values
 
+            while len(selected) < self.selection_size:
+                r = random.uniform(0, total_fitness)
+                cumulative_fitness = 0
+
+                for chromosome in population:
+                    cumulative_fitness += 1 / chromosome.fitness  # Invert fitness values
+
+                    if cumulative_fitness >= r:
+                        selected.append(chromosome)
+                        break
+
+            return selected
+        elif self.selection_type == 'tournament':
+            selected = []
+
+            while len(selected) < self.selection_size[0]:
+                tournament = random.sample(population, self.selection_size[1])
+                winner = min(tournament, key=lambda chromosome: chromosome.fitness)
+                selected.append(winner)
+
+            return selected
+        elif self.selection_type == 'rank':
+            ranked_population = sorted(population, key=lambda chromosome: chromosome.fitness)
+            probabilities = [i / len(ranked_population) for i in range(1, len(ranked_population) + 1)]
+    
+            selected = random.choices(ranked_population, weights=probabilities, k=self.selection_size)
+            return selected
+        else:
+            # Default selection method: random selection
+            return random.sample(population, self.selection_size)
     def replacement_function(self,oldgeneration,newgeneration):
         if self.replacement_function_type == 'new':
             A = newgeneration
@@ -368,6 +382,7 @@ class Genetic:
             ot1 = sorted(oldgeneration,key=lambda x:x.fitness)
             A = newgeneration
             for i in ot1:
+                if len(A)>=len(oldgeneration):break
                 if i not in A:
                     A.append(i)
             while(len(A)<len(oldgeneration)):

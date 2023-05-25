@@ -56,12 +56,12 @@ mutation_type_select = Select(title="Mutation function:", value="swap", options=
 row2 = row(mutation_rate_slider,mutation_type_select,crossover_type_select)
 
 selectionfunclable = PreText(text="Selection function:", width=200, height=10)
-selection_label = ["random","best","roulette"]
-selection_type_select = RadioButtonGroup(labels=["random","best","roulette"], active=0)
+selection_label = ["random","best","roulette",'tournament','rank']
+selection_type_select = RadioButtonGroup(labels=selection_label, active=0)
 col1= column(selectionfunclable,selection_type_select)
 replacementfunclable = PreText(text="Replacement function:", width=200, height=10)
 replacement_label = ["new","best","best-half","new-best-old"]
-replacement_type_select = RadioButtonGroup(labels=["new","best","best-half","new-best-old"], active=0)
+replacement_type_select = RadioButtonGroup(labels=replacement_label, active=0)
 col2= column(replacementfunclable,replacement_type_select)
 row3 = row(col1,col2)
 
@@ -110,7 +110,7 @@ def callback(b:Button):
         algo = Genetic(fitness_function,population_numeric_input.value,mutation_rate_slider.value
                             ,random_gene_maker,{'type':crossover_type_select.value},{'type':mutation_type_select.value},
                             True,selection_label[selection_type_select.active],
-                            replacement_label[replacement_type_select.active],selection_numeric_input.value)
+                            replacement_label[replacement_type_select.active],[selection_numeric_input.value,10*(population_numeric_input.value//selection_numeric_input.value)])
         datachart.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"generation":[],"fitness":[]}})
         
 
