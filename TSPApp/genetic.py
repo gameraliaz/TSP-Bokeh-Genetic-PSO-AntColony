@@ -293,14 +293,14 @@ class Genetic:
 
     def selection_function(self,population):
         if self.selection_type=='random':
-            return random.sample(population,self.selection_size)
+            return random.sample(population,self.selection_size[0])
         elif self.selection_type=='best':
-            return sorted(population,key=lambda x:x.fitness)[:self.selection_size]
+            return sorted(population,key=lambda x:x.fitness)[:self.selection_size[0]]
         elif self.selection_type == 'roulette':
             selected = []
             total_fitness = sum(1 / chromosome.fitness for chromosome in population)  # Invert fitness values
 
-            while len(selected) < self.selection_size:
+            while len(selected) < self.selection_size[0]:
                 r = random.uniform(0, total_fitness)
                 cumulative_fitness = 0
 
@@ -322,14 +322,14 @@ class Genetic:
 
             return selected
         elif self.selection_type == 'rank':
-            ranked_population = sorted(population, key=lambda chromosome: chromosome.fitness)
+            ranked_population = sorted(population, key=lambda chromosome: chromosome.fitness,reverse=True)
             probabilities = [i / len(ranked_population) for i in range(1, len(ranked_population) + 1)]
     
-            selected = random.choices(ranked_population, weights=probabilities, k=self.selection_size)
+            selected = random.choices(ranked_population, weights=probabilities, k=self.selection_size[0])
             return selected
         else:
             # Default selection method: random selection
-            return random.sample(population, self.selection_size)
+            return random.sample(population, self.selection_size[0])
     def replacement_function(self,oldgeneration,newgeneration):
         if self.replacement_function_type == 'new':
             A = newgeneration

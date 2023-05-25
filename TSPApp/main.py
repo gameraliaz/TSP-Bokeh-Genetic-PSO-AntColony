@@ -2,7 +2,7 @@ import pandas as pd
 import networkx as nx
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import Line,ColumnDataSource,ColorPicker,HoverTool,PreText,FileInput, Tabs,TabPanel,Label,Slider,NumericInput, Button, Select,RadioButtonGroup,AutocompleteInput
+from bokeh.models import ColumnDataSource,ColorPicker,HoverTool,PreText,FileInput, Tabs,TabPanel,Label,Slider,NumericInput, Button, Select,RadioButtonGroup,AutocompleteInput
 from bokeh.plotting import figure,from_networkx
 from bokeh.palettes import Category20_20
 import random 
@@ -110,7 +110,7 @@ def callback(b:Button):
         algo = Genetic(fitness_function,population_numeric_input.value,mutation_rate_slider.value
                             ,random_gene_maker,{'type':crossover_type_select.value},{'type':mutation_type_select.value},
                             True,selection_label[selection_type_select.active],
-                            replacement_label[replacement_type_select.active],[selection_numeric_input.value,10*(population_numeric_input.value//selection_numeric_input.value)])
+                            replacement_label[replacement_type_select.active],[selection_numeric_input.value,(population_numeric_input.value//selection_numeric_input.value)])
         datachart.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"generation":[],"fitness":[]}})
         
 
