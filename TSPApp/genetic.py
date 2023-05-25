@@ -267,6 +267,8 @@ class Chromosome:
             raise ValueError("Fitness function is not set")
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.gene == other.gene
 
 class Genetic:
@@ -282,6 +284,7 @@ class Genetic:
         self.mutation_type = mutation_type
         self.crossover_type = crossover_type
         self.best = None
+        self.bestgen = 0
         self.isbest_min = isbest_min
         self.selection_type = selection_function_type
         self.replacement_function_type = replacement_function_type
@@ -292,10 +295,10 @@ class Genetic:
         if self.selection_type=='random':
             return random.sample(population,self.selection_size)
         elif self.selection_type=='best':
-            return sorted(population,key=lambda x:x.fitness)[:self.selection_function]
+            return sorted(population,key=lambda x:x.fitness)[:self.selection_size]
         elif self.selection_type == 'roulette':
+            selected = []
             while len(selected)<self.selection_size:
-                selected = []
                 r = random.random()
                 h = 0.0
                 hn = sum(map(lambda x:x.fitness,population))
@@ -311,6 +314,7 @@ class Genetic:
                             if i in selected:
                                 continue
                             selected.append(i)
+            return selected
 
     def replacement_function(self,oldgeneration,newgeneration):
         if self.replacement_function_type == 'new':
@@ -378,10 +382,21 @@ class Genetic:
                 population.append(rndgene)
         population = list(map(lambda x:Chromosome(x),population))
         while True:
-            if self.isbest_min:
-                self.best = min(self.best,min(population,key=lambda x:x.fitness))
+            if self.best != None:
+                a = self.best
+                if self.isbest_min:
+                    self.best = min(self.best,min(population,key=lambda x:x.fitness),key=lambda x:x.fitness)
+                else:
+                    self.best = max(self.best,max(population,key=lambda x:x.fitness),key=lambda x:x.fitness)
+                if self.best is not a:
+                    self.bestgen = self.generation
             else:
-                self.best = max(self.best,max(population,key=lambda x:x.fitness))
+                if self.isbest_min:
+                    self.best = min(population,key=lambda x:x.fitness)
+                    self.bestgen = self.generation
+                else:
+                    self.best = max(population,key=lambda x:x.fitness)
+                    self.bestgen = self.generation
             yield population
 
             # Generate new population
