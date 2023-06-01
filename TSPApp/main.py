@@ -5,21 +5,23 @@ from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource,ColorPicker,HoverTool,PreText,FileInput, Tabs,TabPanel,Label,Slider,NumericInput, Button, Select,RadioButtonGroup,AutocompleteInput
 from bokeh.plotting import figure,from_networkx
 from bokeh.palettes import Category20_20
-import random 
+import random
+from pso import PSO 
 from genetic import  Genetic
 
 G = None
-datachart = {}
+datachart_genetic = {}
+datachart_pso = {}
 #Algorithms
-def fitness_function(gene):
+def fitness_function(path):
     global G
     fitness = 0
-    for i,v in enumerate(gene):
+    for i,v in enumerate(path):
         try:
-            if i == len(gene)-1:
-                fitness+= G.adj[v][gene[0]]['w']
+            if i == len(path)-1:
+                fitness+= G.adj[v][path[0]]['w']
             else:
-                fitness+= G.adj[v][gene[i+1]]['w']
+                fitness+= G.adj[v][path[i+1]]['w']
         except:
             try:
                 fitness += 1000000
@@ -78,11 +80,11 @@ row5_2=row(Output)
 row5=row(genetic_figure)
 def callback(b:Button):
     print("on start/stop")
-    global datachart,Name_auto_complete_input,Generation_numericalinput
+    global datachart_genetic,Name_auto_complete_input,Generation_numericalinput
     Nameinput = Name_auto_complete_input.value_input
     GenerationMax = Generation_numericalinput.value
-    if Nameinput in datachart.keys():
-        if datachart[Nameinput]["IsEnabel"]:
+    if Nameinput in datachart_genetic.keys():
+        if datachart_genetic[Nameinput]["IsEnabel"]:
             print("already running!")
         else:
             lineChart = None
@@ -90,28 +92,28 @@ def callback(b:Button):
             for i in genetic_figure.renderers:
                 if i.name == Nameinput:
                     lineChart = i
-            datachart[Nameinput]["IsEnabel"] = True
-            algo = datachart[Nameinput]["algorithm"]
+            datachart_genetic[Nameinput]["IsEnabel"] = True
+            algo = datachart_genetic[Nameinput]["algorithm"]
             
             if algo.generation < GenerationMax:
                 for i in algo.Execute():
                     print(f"Generation : {algo.generation}\tFitness : {algo.best.fitness}")
-                    datachart[Nameinput]["generation"].append(algo.generation)
-                    datachart[Nameinput]["fitness"].append(algo.best.fitness)
+                    datachart_genetic[Nameinput]["generation"].append(algo.generation)
+                    datachart_genetic[Nameinput]["fitness"].append(algo.best.fitness)
 
                     lineChart.data_source.stream({"Generation":[algo.generation] , "Fitness":[algo.best.fitness]})
                     Output = PreText(text=f"Generation: {algo.generation}\nBest : \n\tGeneration: {algo.bestgen}\tFitness: {algo.best.fitness}\n\tGene: {algo.best.gene}", width=200, height=75)
                     row5_2.children[0]=Output
                     if algo.generation >= GenerationMax:
                         break
-            datachart[Nameinput]["IsEnabel"] = False
+            datachart_genetic[Nameinput]["IsEnabel"] = False
 
     else:
         algo = Genetic(fitness_function,population_numeric_input.value,mutation_rate_slider.value
                             ,random_gene_maker,{'type':crossover_type_select.value},{'type':mutation_type_select.value},
                             True,selection_label[selection_type_select.active],
                             replacement_label[replacement_type_select.active],[selection_numeric_input.value,(population_numeric_input.value//selection_numeric_input.value)])
-        datachart.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"generation":[],"fitness":[]}})
+        datachart_genetic.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"generation":[],"fitness":[]}})
         
 
         data = {'Generation': [],
@@ -128,21 +130,111 @@ def callback(b:Button):
         if algo.generation < GenerationMax:
             for i in algo.Execute():
                 print(f"Generation : {algo.generation}\tFitness : {algo.best.fitness}")
-                datachart[Nameinput]["generation"].append(algo.generation)
-                datachart[Nameinput]["fitness"].append(algo.best.fitness)
+                datachart_genetic[Nameinput]["generation"].append(algo.generation)
+                datachart_genetic[Nameinput]["fitness"].append(algo.best.fitness)
                 line.data_source.stream({"Generation":[algo.generation] , "Fitness":[algo.best.fitness]})
                 Output = PreText(text=f"Generation: {algo.generation}\nBest : \n\tGeneration: {algo.bestgen}\tFitness: {algo.best.fitness}\n\tGene: {algo.best.gene}", width=200, height=75)
                 row5_2.children[0]=Output
                 if algo.generation >= GenerationMax:
                     break
-        datachart[Nameinput]["IsEnabel"] = False
+        datachart_genetic[Nameinput]["IsEnabel"] = False
 
 button.on_click(lambda : callback(button))
 
 genetic_tab_column = column(row0,row1,row2,row3,row4,row5_2,row5)
 
+# PSO
+Name_auto_complete_input_pso = AutocompleteInput(title="Name:", completions=[])
+row0_pso = row(Name_auto_complete_input_pso)
+Itrations_numericalinput = NumericInput(value=50,low=1,high=1000,title="Number of Itrations:")
+NumParticle_numericalinput = NumericInput(value=50,low=1,high=1000,title="Number of Particles:")
+row0_2_pso = row(Itrations_numericalinput,NumParticle_numericalinput)
+
+inertia_slider = Slider(start=0, end=1, value=0.5, step=0.01, title="Inertia weight")
+row1_pso = row(inertia_slider)
+c1_slider = Slider(start=0, end=10, value=1, step=0.01, title="Personal coeficent")
+c2_slider = Slider(start=0, end=10, value=1, step=0.01, title="Global coeficent")
+row1_2_pso = row(c1_slider,c2_slider)
+
+button_pso = Button(label='start', button_type="primary")
+colorpicker_pso = ColorPicker(title="Line Color")
+row2_pso = row(button_pso,colorpicker_pso)
+
+Output_pso = PreText(text="", width=0, height=0)
+row3_pso=row(Output_pso)
+
+pso_figure=figure(title="PSO Algorithm", x_axis_label="Itration", y_axis_label="Gbest Fitness")
+pso_figure.add_tools(HoverTool(tooltips="Itration: @Itration, Fitness: @Fitness", mode="vline"))
+row4_pso=row(pso_figure)
+
+
+
+def callback(b:Button):
+    print("on start pso")
+    global datachart_pso,Name_auto_complete_input_pso,Itrations_numericalinput
+    Nameinput = Name_auto_complete_input_pso.value_input
+    ItrationMax = Itrations_numericalinput.value
+    if Nameinput in datachart_pso.keys():
+        if datachart_pso[Nameinput]["IsEnabel"]:
+            print("already running!")
+        else:
+            lineChart = None
+
+            for i in pso_figure.renderers:
+                if i.name == Nameinput:
+                    lineChart = i
+            datachart_pso[Nameinput]["IsEnabel"] = True
+            algo = datachart_pso[Nameinput]["algorithm"]
+            
+            if algo.itration_num < ItrationMax:
+                for i in algo.Execute():
+                    print(f"Itration : {algo.itration_num}\tGBest Fitness : {algo.gbest.fitness}")
+                    datachart_pso[Nameinput]["itration"].append(algo.itration_num)
+                    datachart_pso[Nameinput]["fitness"].append(algo.gbest.fitness)
+
+                    lineChart.data_source.stream({"Itration":[algo.itration_num] , "Fitness":[algo.gbest.fitness]})
+                    Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S}", width=200, height=75)
+                    row3_pso.children[0]=Output_pso
+                    if algo.itration_num >= ItrationMax:
+                        break
+            datachart_pso[Nameinput]["IsEnabel"] = False
+
+    else:
+        algo = PSO(NumParticle_numericalinput.value,
+                G,fitness_function,inertia_slider.value
+                ,c1_slider.value,c2_slider.value)
+        datachart_pso.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"itration":[],"fitness":[]}})
+        
+
+        data = {'Itration': [],
+                'Fitness': []}
+        source = ColumnDataSource(data=data)
+
+        line = pso_figure.line(legend_label=Nameinput,
+                            name=Nameinput,
+                            color=colorpicker_pso.color,
+                            line_width=2,x="Itration",y="Fitness",source=source)
+        pso_figure.legend.click_policy="mute"
+        Name_auto_complete_input_pso.completions.append(Nameinput)
+
+        if algo.itration_num < ItrationMax:
+            for i in algo.Execute():
+                print(f"Itration : {algo.itration_num}\tFitness : {algo.gbest.fitness}")
+                datachart_pso[Nameinput]["itration"].append(algo.itration_num)
+                datachart_pso[Nameinput]["fitness"].append(algo.gbest.fitness)
+                line.data_source.stream({"Itration":[algo.itration_num] , "Fitness":[algo.gbest.fitness]})
+                Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S}", width=200, height=75)
+                row3_pso.children[0]=Output_pso
+                if algo.itration_num >= ItrationMax:
+                    break
+        datachart_pso[Nameinput]["IsEnabel"] = False
+
+button_pso.on_click(lambda : callback(button_pso))
+
+Pso_tab_column = column(row0_pso,row0_2_pso,row1_pso,row1_2_pso,row2_pso,row3_pso,row4_pso)
+
 genetic_algo_tab = TabPanel(title="Genetic Algorithm", child=genetic_tab_column)
-pso_algo_tab = TabPanel(title="PSO Algorithm", child=figure())
+pso_algo_tab = TabPanel(title="PSO Algorithm", child=Pso_tab_column)
 ant_colony_tab = TabPanel(title="Ant Colony", child=figure())
 
 algorithm_tabs = Tabs(tabs=[genetic_algo_tab, pso_algo_tab, ant_colony_tab])

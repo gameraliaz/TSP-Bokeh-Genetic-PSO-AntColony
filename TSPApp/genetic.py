@@ -1,15 +1,11 @@
 import random
-import pandas as pd
-from numpy import Inf
-import networkx as nx
 
 class Chromosome:
-    fitness_function = None
-    mutation_rate = None
-
-    def __init__(self, gene):
+    def __init__(self, gene,fitness_function,mutation_rate):
         self.gene = gene
-        self.fitness = Chromosome.calculate_fitness(self.gene)
+        self.fitness_function = fitness_function
+        self.mutation_rate = mutation_rate
+        self.calculate_fitness()
 
     def crossover(self,argc):
         if argc['type']=='single_point':
@@ -28,28 +24,28 @@ class Chromosome:
     def mutation(self,argc):
         if argc['type']=='all':
             self.mutation_all()
-            self.fitness = Chromosome.calculate_fitness(self.gene)
+            self.fitness = self.calculate_fitness()
         elif argc['type']=='some':
             if 'k' in argc.keys():
                 self.mutation_some(argc['k'])
             else:
                 self.mutation_some()
-            self.fitness = Chromosome.calculate_fitness(self.gene)
+            self.fitness = self.calculate_fitness()
         elif argc['type']=='swap':
             if 'k' in argc.keys():
                 self.mutation_swap(argc['k'])
             else:
                 self.mutation_swap()
-            self.fitness = Chromosome.calculate_fitness(self.gene)
+            self.fitness = self.calculate_fitness()
         elif argc['type']=='insert':
             self.mutation_insert()
-            self.fitness = Chromosome.calculate_fitness(self.gene)
+            self.fitness = self.calculate_fitness()
         elif argc['type']=='inversion':
             self.mutation_inversion()
-            self.fitness = Chromosome.calculate_fitness(self.gene)
+            self.fitness = self.calculate_fitness()
         elif argc['type']=='scrumble':
             self.mutation_scrumble()
-            self.fitness = Chromosome.calculate_fitness(self.gene)
+            self.fitness = self.calculate_fitness()
 
     def crossover_single_point(self, other_chromosome):
         crossover_point = random.randint(1, len(self.gene) - 1)
@@ -57,8 +53,8 @@ class Chromosome:
         gene1 = self.gene[:crossover_point] + other_chromosome.gene[crossover_point:]
         gene2 = other_chromosome.gene[:crossover_point] + self.gene[crossover_point:]
 
-        chromosome1 = Chromosome(gene1)
-        chromosome2 = Chromosome(gene2)
+        chromosome1 = Chromosome(gene1,self.fitness_function,self.mutation_rate)
+        chromosome2 = Chromosome(gene2,self.fitness_function,self.mutation_rate)
 
         return chromosome1, chromosome2
 
@@ -69,8 +65,8 @@ class Chromosome:
         gene1 = self.gene[:crossover_point1] + other_chromosome.gene[crossover_point1:crossover_point2] + self.gene[crossover_point2:]
         gene2 = other_chromosome.gene[:crossover_point1] + self.gene[crossover_point1:crossover_point2] + other_chromosome.gene[crossover_point2:]
 
-        chromosome1 = Chromosome(gene1)
-        chromosome2 = Chromosome(gene2)
+        chromosome1 = Chromosome(gene1,self.fitness_function,self.mutation_rate)
+        chromosome2 = Chromosome(gene2,self.fitness_function,self.mutation_rate)
 
         return chromosome1, chromosome2
 
@@ -98,8 +94,8 @@ class Chromosome:
             offspring_gene1 = self.__pmx_crossover(gene1, gene2, crossover_point1, crossover_point2)
             offspring_gene2 = self.__pmx_crossover(gene2, gene1, crossover_point1, crossover_point2)
 
-            chromosome1 = Chromosome(offspring_gene1)
-            chromosome2 = Chromosome(offspring_gene2)
+            chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate)
+            chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate)
 
             return chromosome1, chromosome2
         except:
@@ -115,8 +111,8 @@ class Chromosome:
         offspring_gene1 = self.__ox_crossover(gene1, gene2, crossover_point1, crossover_point2)
         offspring_gene2 = self.__ox_crossover(gene2, gene1, crossover_point1, crossover_point2)
 
-        chromosome1 = Chromosome(offspring_gene1)
-        chromosome2 = Chromosome(offspring_gene2)
+        chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate)
+        chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate)
 
         return chromosome1, chromosome2
 
@@ -150,17 +146,17 @@ class Chromosome:
                 offspring_gene1[i] = other_chromosome.gene[i]
                 offspring_gene2[i] = self.gene[i]
 
-        chromosome1 = Chromosome(offspring_gene1)
-        chromosome2 = Chromosome(offspring_gene2)
+        chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate)
+        chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate)
 
         return chromosome1, chromosome2
 
 
     #only for binery
     def mutation_all(self):
-        if Chromosome.mutation_rate is not None:
+        if self.mutation_rate is not None:
             for v,i in enumerate(self.gene):
-                if random.random()<Chromosome.mutation_rate:
+                if random.random()<self.mutation_rate:
                     if v:
                         self.gene[i] = 0
                     else:
@@ -170,10 +166,10 @@ class Chromosome:
     
     #only for binery
     def mutation_some(self,k=1):
-        if Chromosome.mutation_rate is not None:
+        if self.mutation_rate is not None:
             A = random.choices(range(len(self.gene)),k=k)
             for i in A:
-                if random.random()<Chromosome.mutation_rate:
+                if random.random()<self.mutation_rate:
                     if self.gene[i]:
                         self.gene[i] = 0
                     else:
@@ -182,20 +178,20 @@ class Chromosome:
             raise ValueError("Mutation rate is not set")
 
     def mutation_swap(self,k=1):
-        if Chromosome.mutation_rate is not None:
+        if self.mutation_rate is not None:
             A = random.choices(range(len(self.gene)),k=k*2)
             for i in range(k):
                 a1 = A.pop()
                 a2 = A.pop()
-                if not random.random()<Chromosome.mutation_rate:
+                if not random.random()<self.mutation_rate:
                     continue
                 self.gene[a1] , self.gene[a2] = self.gene[a2] , self.gene[a1] 
         else:
             raise ValueError("Mutation rate is not set")
 
     def mutation_insert(self):
-        if Chromosome.mutation_rate is not None:
-            if random.random()<Chromosome.mutation_rate:
+        if self.mutation_rate is not None:
+            if random.random()<self.mutation_rate:
                 return
             point1 = random.randint(0, len(self.gene) - 2)
             point2 = random.randint(point1 + 1, len(self.gene) - 1)
@@ -206,8 +202,8 @@ class Chromosome:
             raise ValueError("Mutation rate is not set")
     
     def mutation_inversion(self):
-        if Chromosome.mutation_rate is not None:
-            if random.random()<Chromosome.mutation_rate:
+        if self.mutation_rate is not None:
+            if random.random()<self.mutation_rate:
                 return
             point1 = random.randint(0, len(self.gene) - 2)
             point2 = random.randint(point1 + 1, len(self.gene) - 1)
@@ -216,8 +212,8 @@ class Chromosome:
             raise ValueError("Mutation rate is not set")
 
     def mutation_scrumble(self):
-        if Chromosome.mutation_rate is not None:
-            if random.random()<Chromosome.mutation_rate:
+        if self.mutation_rate is not None:
+            if random.random()<self.mutation_rate:
                 return
             point1 = random.randint(0, len(self.gene) - 2)
             point2 = random.randint(point1 + 1, len(self.gene) - 1)
@@ -259,12 +255,8 @@ class Chromosome:
 
         return offspring_gene
 
-    @staticmethod
-    def calculate_fitness(gene):
-        if Chromosome.fitness_function is not None:
-            return Chromosome.fitness_function(gene)
-        else:
-            raise ValueError("Fitness function is not set")
+    def calculate_fitness(self):
+        return self.fitness_function(self.gene)
 
     def __eq__(self, other):
         if other is None:
@@ -277,8 +269,8 @@ class Genetic:
                 mutation_type,isbest_min,selection_function_type,
                 replacement_function_type,selection_size) -> None:
         self.population_size = population_size
-        Chromosome.fitness_function = fitness_function
-        Chromosome.mutation_rate = mutation_rate
+        self.fitness_function = fitness_function
+        self.mutation_rate = mutation_rate
         self.generation = 0
         self.randome_gene_maker = random_gen_maker
         self.mutation_type = mutation_type
@@ -395,7 +387,7 @@ class Genetic:
             rndgene = self.randome_gene_maker()
             if rndgene not in population:
                 population.append(rndgene)
-        population = list(map(lambda x:Chromosome(x),population))
+        population = list(map(lambda x:Chromosome(x,self.fitness_function,self.mutation_rate),population))
         while True:
             if self.best != None:
                 a = self.best
