@@ -7,12 +7,12 @@ class Ant:
         self.distance = 0
 
     def move(self,G:Graph,alpha,beta,heuristic):
-        if self.path[0]==self.path[-1]:
+        if len(self.path)>len(G):
             raise Exception("Ended!")
         j = None
-        if len(self.path>0):
+        if len(self.path)>0:
             i = self.path[-1]
-            L = [k for k in G.neighbors(i) if k not in self.path] 
+            L = [k for k in G.neighbors(i) if k not in self.path]
             
             S = [G.edges[i,l]["pheromone"]**alpha * heuristic(i,l,G)**beta for l in L]
 
@@ -30,7 +30,7 @@ class Ant:
 
             self.distance += G.edges[i,j]["w"]
         else:
-            j = random.choice(G.nodes)
+            j = random.choice(list(G.nodes))
         self.path.append(j)
         
         if len(self.path) == len(G.nodes):
@@ -45,7 +45,7 @@ class AntColony:
         self.beta = beta
         self.evaporation_rate = evaporation_rate
         self.initial_pheromone = initial_pheromone
-        self.heuristic = lambda x,y,g:1/g[x,y]["w"]
+        self.heuristic = lambda x,y,g:1/g.edges[x,y]["w"]
         self.G = G
         self.ants = []
         self.itration_num = 0

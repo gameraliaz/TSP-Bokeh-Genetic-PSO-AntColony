@@ -5,7 +5,7 @@ class Chromosome:
         self.gene = gene
         self.fitness_function = fitness_function
         self.mutation_rate = mutation_rate
-        self.calculate_fitness()
+        self.fitness = self.calculate_fitness()
 
     def crossover(self,argc):
         if argc['type']=='single_point':

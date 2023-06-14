@@ -86,7 +86,7 @@ Output = PreText(text="", width=0, height=0)
 row5_2=row(Output)
 
 row5=row(genetic_figure)
-def callback(b:Button):
+def callback_gene():
     print("on start/stop")
     global datachart_genetic,Name_auto_complete_input,Generation_numericalinput
     Nameinput = Name_auto_complete_input.value_input
@@ -147,7 +147,7 @@ def callback(b:Button):
                     break
         datachart_genetic[Nameinput]["IsEnabel"] = False
 
-button.on_click(lambda : callback(button))
+button.on_click(callback_gene)
 
 genetic_tab_column = column(row0,row1,row2,row3,row4,row5_2,row5)
 
@@ -175,7 +175,7 @@ pso_figure=figure(title="PSO Algorithm", x_axis_label="Itration", y_axis_label="
 pso_figure.add_tools(HoverTool(tooltips="Itration: @Itration, Fitness: @Fitness", mode="vline"))
 row4_pso=row(pso_figure)
 
-def callback(b:Button):
+def callback_pso():
     print("on start pso")
     global datachart_pso,Name_auto_complete_input_pso,Itrations_numericalinput
     Nameinput = Name_auto_complete_input_pso.value_input
@@ -199,7 +199,7 @@ def callback(b:Button):
                     datachart_pso[Nameinput]["fitness"].append(algo.gbest.fitness)
 
                     lineChart.data_source.stream({"Itration":[algo.itration_num] , "Fitness":[algo.gbest.fitness]})
-                    Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S+[algo.best.S[0]]}", width=200, height=75)
+                    Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S+[algo.gbest.S[0]]}", width=200, height=75)
                     row3_pso.children[0]=Output_pso
                     if algo.itration_num >= ItrationMax:
                         break
@@ -229,13 +229,13 @@ def callback(b:Button):
                 datachart_pso[Nameinput]["itration"].append(algo.itration_num)
                 datachart_pso[Nameinput]["fitness"].append(algo.gbest.fitness)
                 line.data_source.stream({"Itration":[algo.itration_num] , "Fitness":[algo.gbest.fitness]})
-                Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S+[algo.best.S[0]]}", width=200, height=75)
+                Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S+[algo.gbest.S[0]]}", width=200, height=75)
                 row3_pso.children[0]=Output_pso
                 if algo.itration_num >= ItrationMax:
                     break
         datachart_pso[Nameinput]["IsEnabel"] = False
 
-button_pso.on_click(lambda : callback(button_pso))
+button_pso.on_click(callback_pso)
 
 Pso_tab_column = column(row0_pso,row0_2_pso,row1_pso,row1_2_pso,row2_pso,row3_pso,row4_pso)
 
@@ -248,7 +248,7 @@ NumAnt_numericalinput = NumericInput(value=50,low=1,high=1000,title="Number of A
 row0_2_aco = row(Itrations_aco_numericalinput,NumAnt_numericalinput)
 
 evaporation_slider = Slider(start=0, end=1, value=0.5, step=0.01, title="Evaporation rate")
-init_pheromone_slider = Slider(start=0, end=1, value=0.5, step=0.1, title="Initial pheromone")
+init_pheromone_slider = Slider(start=0, end=1, value=0.5, step=0.01, title="Initial pheromone")
 row1_aco = row(evaporation_slider,init_pheromone_slider)
 alpha_slider = Slider(start=0, end=10, value=1, step=0.01, title="Alpha")
 beta_slider = Slider(start=0, end=10, value=1, step=0.01, title="Beta")
@@ -256,7 +256,7 @@ row1_2_aco = row(alpha_slider,beta_slider)
 
 button_aco = Button(label='start', button_type="primary")
 colorpicker_aco = ColorPicker(title="Line Color")
-row2_aco = row(button_aco,colorpicker_aco)
+row2_aco = row(colorpicker_aco,button_aco)
 
 Output_aco = PreText(text="", width=0, height=0)
 row3_aco=row(Output_aco)
@@ -265,7 +265,7 @@ aco_figure=figure(title="ACO Algorithm", x_axis_label="Itration", y_axis_label="
 aco_figure.add_tools(HoverTool(tooltips="Itration: @Itration, Distance: @Distance", mode="vline"))
 row4_aco=row(aco_figure)
 
-def callback(b:Button):
+def callback_aco():
     print("on start aco")
     global datachart_aco,Name_auto_complete_input_aco,Itrations_aco_numericalinput
     Nameinput = Name_auto_complete_input_aco.value_input
@@ -285,7 +285,7 @@ def callback(b:Button):
             if algo.itration_num < ItrationMax:
                 for i in algo.Execute():
                     best=min(algo.ants,key=lambda x:x.distance)
-                    print(f"Itration : {algo.itration_num}\tGBest Distance : {best.distance}")
+                    print(f"Itration : {algo.itration_num}\tBest Distance : {best.distance}")
                     datachart_aco[Nameinput]["itration"].append(algo.itration_num)
                     datachart_aco[Nameinput]["distance"].append(best.distance)
 
@@ -317,18 +317,18 @@ def callback(b:Button):
         if algo.itration_num < ItrationMax:
             for i in algo.Execute():
                 best=min(algo.ants,key=lambda x:x.distance)
-                print(f"Itration : {algo.itration_num}\tGBest Distance : {best.distance}")
+                print(f"Itration : {algo.itration_num}\tBest Distance : {best.distance}")
                 datachart_aco[Nameinput]["itration"].append(algo.itration_num)
                 datachart_aco[Nameinput]["distance"].append(best.distance)
 
-                lineChart.data_source.stream({"Itration":[algo.itration_num] , "Distance":[best.distance]})
+                line.data_source.stream({"Itration":[algo.itration_num] , "Distance":[best.distance]})
                 Output_aco = PreText(text=f"Itration: {algo.itration_num}\nBest : \n\tDistance: {best.distance}\n\tPath: {best.path}", width=200, height=75)
                 row3_aco.children[0]=Output_aco
                 if algo.itration_num >= ItrationMax:
                     break
         datachart_aco[Nameinput]["IsEnabel"] = False
 
-button_aco.on_click(lambda : callback(button_aco))
+button_aco.on_click(callback_aco)
 
 aco_tab_column = column(row0_aco,row0_2_aco,row1_aco,row1_2_aco,row2_aco,row3_aco,row4_aco)
 
