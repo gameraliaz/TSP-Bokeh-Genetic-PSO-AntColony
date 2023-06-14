@@ -8,10 +8,11 @@ from bokeh.palettes import Category20_20
 import random
 from pso import PSO 
 from genetic import  Genetic
-
+from antcolony import AntColony
 G = None
 datachart_genetic = {}
 datachart_pso = {}
+datachart_aco = {}
 #Algorithms
 def fitness_function(path):
     global G
@@ -27,6 +28,13 @@ def fitness_function(path):
                 fitness += 1000000
             except:
                 pass
+    try:
+        fitness+= G.adj[path[-1]][path[0]]['w']
+    except:
+        try:
+            fitness += 1000000
+        except:
+            pass
     return fitness
 
 def random_gene_maker():
@@ -102,7 +110,7 @@ def callback(b:Button):
                     datachart_genetic[Nameinput]["fitness"].append(algo.best.fitness)
 
                     lineChart.data_source.stream({"Generation":[algo.generation] , "Fitness":[algo.best.fitness]})
-                    Output = PreText(text=f"Generation: {algo.generation}\nBest : \n\tGeneration: {algo.bestgen}\tFitness: {algo.best.fitness}\n\tGene: {algo.best.gene}", width=200, height=75)
+                    Output = PreText(text=f"Generation: {algo.generation}\nBest : \n\tGeneration: {algo.bestgen}\tFitness: {algo.best.fitness}\n\tGene: {algo.best.gene+[algo.best.gene[0]]}", width=200, height=75)
                     row5_2.children[0]=Output
                     if algo.generation >= GenerationMax:
                         break
@@ -133,7 +141,7 @@ def callback(b:Button):
                 datachart_genetic[Nameinput]["generation"].append(algo.generation)
                 datachart_genetic[Nameinput]["fitness"].append(algo.best.fitness)
                 line.data_source.stream({"Generation":[algo.generation] , "Fitness":[algo.best.fitness]})
-                Output = PreText(text=f"Generation: {algo.generation}\nBest : \n\tGeneration: {algo.bestgen}\tFitness: {algo.best.fitness}\n\tGene: {algo.best.gene}", width=200, height=75)
+                Output = PreText(text=f"Generation: {algo.generation}\nBest : \n\tGeneration: {algo.bestgen}\tFitness: {algo.best.fitness}\n\tGene: {algo.best.gene+[algo.best.gene[0]]}", width=200, height=75)
                 row5_2.children[0]=Output
                 if algo.generation >= GenerationMax:
                     break
@@ -167,8 +175,6 @@ pso_figure=figure(title="PSO Algorithm", x_axis_label="Itration", y_axis_label="
 pso_figure.add_tools(HoverTool(tooltips="Itration: @Itration, Fitness: @Fitness", mode="vline"))
 row4_pso=row(pso_figure)
 
-
-
 def callback(b:Button):
     print("on start pso")
     global datachart_pso,Name_auto_complete_input_pso,Itrations_numericalinput
@@ -193,7 +199,7 @@ def callback(b:Button):
                     datachart_pso[Nameinput]["fitness"].append(algo.gbest.fitness)
 
                     lineChart.data_source.stream({"Itration":[algo.itration_num] , "Fitness":[algo.gbest.fitness]})
-                    Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S}", width=200, height=75)
+                    Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S+[algo.best.S[0]]}", width=200, height=75)
                     row3_pso.children[0]=Output_pso
                     if algo.itration_num >= ItrationMax:
                         break
@@ -223,7 +229,7 @@ def callback(b:Button):
                 datachart_pso[Nameinput]["itration"].append(algo.itration_num)
                 datachart_pso[Nameinput]["fitness"].append(algo.gbest.fitness)
                 line.data_source.stream({"Itration":[algo.itration_num] , "Fitness":[algo.gbest.fitness]})
-                Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S}", width=200, height=75)
+                Output_pso = PreText(text=f"Itration: {algo.itration_num}\nGlobal Best : \n\tItration: {algo.gbest_itration}\tFitness: {algo.gbest.fitness}\n\tS: {algo.gbest.S+[algo.best.S[0]]}", width=200, height=75)
                 row3_pso.children[0]=Output_pso
                 if algo.itration_num >= ItrationMax:
                     break
@@ -233,9 +239,103 @@ button_pso.on_click(lambda : callback(button_pso))
 
 Pso_tab_column = column(row0_pso,row0_2_pso,row1_pso,row1_2_pso,row2_pso,row3_pso,row4_pso)
 
+
+# ACO
+Name_auto_complete_input_aco = AutocompleteInput(title="Name:", completions=[])
+row0_aco = row(Name_auto_complete_input_aco)
+Itrations_aco_numericalinput = NumericInput(value=50,low=1,high=1000,title="Number of Itrations:")
+NumAnt_numericalinput = NumericInput(value=50,low=1,high=1000,title="Number of Ant:")
+row0_2_aco = row(Itrations_aco_numericalinput,NumAnt_numericalinput)
+
+evaporation_slider = Slider(start=0, end=1, value=0.5, step=0.01, title="Evaporation rate")
+init_pheromone_slider = Slider(start=0, end=1, value=0.5, step=0.1, title="Initial pheromone")
+row1_aco = row(evaporation_slider,init_pheromone_slider)
+alpha_slider = Slider(start=0, end=10, value=1, step=0.01, title="Alpha")
+beta_slider = Slider(start=0, end=10, value=1, step=0.01, title="Beta")
+row1_2_aco = row(alpha_slider,beta_slider)
+
+button_aco = Button(label='start', button_type="primary")
+colorpicker_aco = ColorPicker(title="Line Color")
+row2_aco = row(button_aco,colorpicker_aco)
+
+Output_aco = PreText(text="", width=0, height=0)
+row3_aco=row(Output_aco)
+
+aco_figure=figure(title="ACO Algorithm", x_axis_label="Itration", y_axis_label="Best")
+aco_figure.add_tools(HoverTool(tooltips="Itration: @Itration, Distance: @Distance", mode="vline"))
+row4_aco=row(aco_figure)
+
+def callback(b:Button):
+    print("on start aco")
+    global datachart_aco,Name_auto_complete_input_aco,Itrations_aco_numericalinput
+    Nameinput = Name_auto_complete_input_aco.value_input
+    ItrationMax = Itrations_aco_numericalinput.value
+    if Nameinput in datachart_aco.keys():
+        if datachart_aco[Nameinput]["IsEnabel"]:
+            print("already running!")
+        else:
+            lineChart = None
+
+            for i in aco_figure.renderers:
+                if i.name == Nameinput:
+                    lineChart = i
+            datachart_aco[Nameinput]["IsEnabel"] = True
+            algo = datachart_aco[Nameinput]["algorithm"]
+            
+            if algo.itration_num < ItrationMax:
+                for i in algo.Execute():
+                    best=min(algo.ants,key=lambda x:x.distance)
+                    print(f"Itration : {algo.itration_num}\tGBest Distance : {best.distance}")
+                    datachart_aco[Nameinput]["itration"].append(algo.itration_num)
+                    datachart_aco[Nameinput]["distance"].append(best.distance)
+
+                    lineChart.data_source.stream({"Itration":[algo.itration_num] , "Distance":[best.distance]})
+                    Output_aco = PreText(text=f"Itration: {algo.itration_num}\nBest : \n\tDistance: {best.distance}\n\tPath: {best.path}", width=200, height=75)
+                    row3_aco.children[0]=Output_aco
+                    if algo.itration_num >= ItrationMax:
+                        break
+            datachart_aco[Nameinput]["IsEnabel"] = False
+
+    else:
+        algo = AntColony(NumAnt_numericalinput.value,alpha_slider.value,
+                        beta_slider.value,evaporation_slider.value,
+                        init_pheromone_slider.value,G)
+        datachart_aco.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"itration":[],"distance":[]}})
+        
+
+        data = {'Itration': [],
+                'Distance': []}
+        source = ColumnDataSource(data=data)
+
+        line = aco_figure.line(legend_label=Nameinput,
+                            name=Nameinput,
+                            color=colorpicker_aco.color,
+                            line_width=2,x="Itration",y="Distance",source=source)
+        aco_figure.legend.click_policy="mute"
+        Name_auto_complete_input_aco.completions.append(Nameinput)
+
+        if algo.itration_num < ItrationMax:
+            for i in algo.Execute():
+                best=min(algo.ants,key=lambda x:x.distance)
+                print(f"Itration : {algo.itration_num}\tGBest Distance : {best.distance}")
+                datachart_aco[Nameinput]["itration"].append(algo.itration_num)
+                datachart_aco[Nameinput]["distance"].append(best.distance)
+
+                lineChart.data_source.stream({"Itration":[algo.itration_num] , "Distance":[best.distance]})
+                Output_aco = PreText(text=f"Itration: {algo.itration_num}\nBest : \n\tDistance: {best.distance}\n\tPath: {best.path}", width=200, height=75)
+                row3_aco.children[0]=Output_aco
+                if algo.itration_num >= ItrationMax:
+                    break
+        datachart_aco[Nameinput]["IsEnabel"] = False
+
+button_aco.on_click(lambda : callback(button_aco))
+
+aco_tab_column = column(row0_aco,row0_2_aco,row1_aco,row1_2_aco,row2_aco,row3_aco,row4_aco)
+
+
 genetic_algo_tab = TabPanel(title="Genetic Algorithm", child=genetic_tab_column)
 pso_algo_tab = TabPanel(title="PSO Algorithm", child=Pso_tab_column)
-ant_colony_tab = TabPanel(title="Ant Colony", child=figure())
+ant_colony_tab = TabPanel(title="Ant Colony", child=aco_tab_column)
 
 algorithm_tabs = Tabs(tabs=[genetic_algo_tab, pso_algo_tab, ant_colony_tab])
 
