@@ -61,9 +61,11 @@ selection_numeric_input = NumericInput(value=50, low=1, high=1000, title="Select
 row1 = row(population_numeric_input,selection_numeric_input)
 
 mutation_rate_slider = Slider(start=0, end=1, value=0.01, step=0.01, title="Mutation Rate")
+crossover_rate_slider = Slider(start=0, end=1, value=0.9, step=0.01, title="Crossover Rate")
+row2 = row(mutation_rate_slider,crossover_rate_slider)
 crossover_type_select = Select(title="Crossover function:", value="pmx", options=["pmx", "ox", "cx"])
 mutation_type_select = Select(title="Mutation function:", value="swap", options=["swap", "insert", "inversion","scrumble"])
-row2 = row(mutation_rate_slider,mutation_type_select,crossover_type_select)
+row2_2 = row(mutation_type_select,crossover_type_select)
 
 selectionfunclable = PreText(text="Selection function:", width=200, height=10)
 selection_label = ["random","best","roulette",'tournament','rank']
@@ -120,7 +122,7 @@ def callback_gene():
         algo = Genetic(fitness_function,population_numeric_input.value,mutation_rate_slider.value
                             ,random_gene_maker,{'type':crossover_type_select.value},{'type':mutation_type_select.value},
                             True,selection_label[selection_type_select.active],
-                            replacement_label[replacement_type_select.active],[selection_numeric_input.value,(population_numeric_input.value//selection_numeric_input.value)])
+                            replacement_label[replacement_type_select.active],[selection_numeric_input.value,(population_numeric_input.value//selection_numeric_input.value)],crossover_rate_slider.value)
         datachart_genetic.update({Nameinput:{"algorithm":algo,"IsEnabel":True,"generation":[],"fitness":[]}})
         
 
@@ -149,7 +151,7 @@ def callback_gene():
 
 button.on_click(callback_gene)
 
-genetic_tab_column = column(row0,row1,row2,row3,row4,row5_2,row5)
+genetic_tab_column = column(row0,row1,row2,row2_2,row3,row4,row5_2,row5)
 
 # PSO
 Name_auto_complete_input_pso = AutocompleteInput(title="Name:", completions=[])

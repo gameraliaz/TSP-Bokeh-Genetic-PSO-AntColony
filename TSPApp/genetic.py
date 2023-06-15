@@ -1,13 +1,17 @@
+import copy
 import random
 
 class Chromosome:
-    def __init__(self, gene,fitness_function,mutation_rate):
+    def __init__(self, gene,fitness_function,mutation_rate,crossover_rate):
         self.gene = gene
         self.fitness_function = fitness_function
         self.mutation_rate = mutation_rate
+        self.crossover_rate = crossover_rate
         self.fitness = self.calculate_fitness()
 
     def crossover(self,argc):
+        if self.crossover_rate<random.random():
+            return copy.deepcopy(self),copy.deepcopy(argc['other_chromosome'])
         if argc['type']=='single_point':
             return self.crossover_single_point(argc['other_chromosome'])
         elif argc['type']=='two_point':
@@ -53,8 +57,8 @@ class Chromosome:
         gene1 = self.gene[:crossover_point] + other_chromosome.gene[crossover_point:]
         gene2 = other_chromosome.gene[:crossover_point] + self.gene[crossover_point:]
 
-        chromosome1 = Chromosome(gene1,self.fitness_function,self.mutation_rate)
-        chromosome2 = Chromosome(gene2,self.fitness_function,self.mutation_rate)
+        chromosome1 = Chromosome(gene1,self.fitness_function,self.mutation_rate,self.crossover_rate)
+        chromosome2 = Chromosome(gene2,self.fitness_function,self.mutation_rate,self.crossover_rate)
 
         return chromosome1, chromosome2
 
@@ -65,8 +69,8 @@ class Chromosome:
         gene1 = self.gene[:crossover_point1] + other_chromosome.gene[crossover_point1:crossover_point2] + self.gene[crossover_point2:]
         gene2 = other_chromosome.gene[:crossover_point1] + self.gene[crossover_point1:crossover_point2] + other_chromosome.gene[crossover_point2:]
 
-        chromosome1 = Chromosome(gene1,self.fitness_function,self.mutation_rate)
-        chromosome2 = Chromosome(gene2,self.fitness_function,self.mutation_rate)
+        chromosome1 = Chromosome(gene1,self.fitness_function,self.mutation_rate,self.crossover_rate)
+        chromosome2 = Chromosome(gene2,self.fitness_function,self.mutation_rate,self.crossover_rate)
 
         return chromosome1, chromosome2
 
@@ -94,8 +98,8 @@ class Chromosome:
             offspring_gene1 = self.__pmx_crossover(gene1, gene2, crossover_point1, crossover_point2)
             offspring_gene2 = self.__pmx_crossover(gene2, gene1, crossover_point1, crossover_point2)
 
-            chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate)
-            chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate)
+            chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate,self.crossover_rate)
+            chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate,self.crossover_rate)
 
             return chromosome1, chromosome2
         except:
@@ -111,8 +115,8 @@ class Chromosome:
         offspring_gene1 = self.__ox_crossover(gene1, gene2, crossover_point1, crossover_point2)
         offspring_gene2 = self.__ox_crossover(gene2, gene1, crossover_point1, crossover_point2)
 
-        chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate)
-        chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate)
+        chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate,self.crossover_rate)
+        chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate,self.crossover_rate)
 
         return chromosome1, chromosome2
 
@@ -146,8 +150,8 @@ class Chromosome:
                 offspring_gene1[i] = other_chromosome.gene[i]
                 offspring_gene2[i] = self.gene[i]
 
-        chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate)
-        chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate)
+        chromosome1 = Chromosome(offspring_gene1,self.fitness_function,self.mutation_rate,self.crossover_rate)
+        chromosome2 = Chromosome(offspring_gene2,self.fitness_function,self.mutation_rate,self.crossover_rate)
 
         return chromosome1, chromosome2
 
@@ -267,7 +271,7 @@ class Genetic:
     def __init__(self,fitness_function,population_size,
                 mutation_rate,random_gen_maker,crossover_type,
                 mutation_type,isbest_min,selection_function_type,
-                replacement_function_type,selection_size) -> None:
+                replacement_function_type,selection_size,crossover_rate) -> None:
         self.population_size = population_size
         self.fitness_function = fitness_function
         self.mutation_rate = mutation_rate
@@ -281,6 +285,7 @@ class Genetic:
         self.selection_type = selection_function_type
         self.replacement_function_type = replacement_function_type
         self.selection_size = selection_size
+        self.crossover_rate = crossover_rate
     
 
     def selection_function(self,population):
@@ -387,7 +392,7 @@ class Genetic:
             rndgene = self.randome_gene_maker()
             if rndgene not in population:
                 population.append(rndgene)
-        population = list(map(lambda x:Chromosome(x,self.fitness_function,self.mutation_rate),population))
+        population = list(map(lambda x:Chromosome(x,self.fitness_function,self.mutation_rate,self.crossover_rate),population))
         while True:
             if self.best != None:
                 a = self.best
