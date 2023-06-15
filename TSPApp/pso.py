@@ -2,28 +2,28 @@ import random
 import copy
 
 class Particle:
-    def __init__(self,graph):
+    def __init__(self,graph,fitness_func):
         self.x = [random.uniform(-len(graph.nodes), len(graph.nodes)) for _ in range(len(graph.nodes))]
         self.v = [random.uniform(-len(graph.nodes), len(graph.nodes)) for _ in range(len(graph.nodes))]
-        self.S = [i for i in range(1, len(graph.nodes)+1)]  # Initialize S with indices
+        sorted_indices = sorted(range(len(self.x)), key=lambda j: self.x[j])
+        self.S = [idx + 1 for idx in sorted_indices]
         self.pbest = self.x[:]
         self.fitness = 0.0
+        self.evaluate_fitness(fitness_func)
 
     def update(self, w, c1, c2, gbest, graph):
+        lv = self.v[:]
         for i in range(len(self.x)):
             r1 = random.uniform(0, 1)
             r2 = random.uniform(0, 1)
             self.v[i] = w * self.v[i] + c1 * r1 * (self.pbest[i] - self.x[i]) + c2 * r2 * (gbest[i] - self.x[i])
             
-            # Bound the velocity within [-len(graph.nodes), len(graph.nodes)]
             self.v[i] = min(max(self.v[i], -len(graph.nodes)), len(graph.nodes))
             
-            self.x[i] = self.x[i] + self.v[i]
+            self.x[i] = self.x[i] + self.lv[i]
             
-            # Bound the position within [-len(graph.nodes), len(graph.nodes)]
             self.x[i] = min(max(self.x[i], -len(graph.nodes)), len(graph.nodes))
             
-        # Update S based on sorted x values
         sorted_indices = sorted(range(len(self.x)), key=lambda j: self.x[j])
         self.S = [idx + 1 for idx in sorted_indices]
 
@@ -39,7 +39,7 @@ class PSO:
         self.c2 = c2
         self.num_particles = num_particles
         self.graph = graph
-        self.particles = [Particle(graph) for _ in range(num_particles)]
+        self.particles = [Particle(graph,fitness_func) for _ in range(num_particles)]
         self.gbest = None
         self.itration_num = 0
         self.gbest_itration = 0
