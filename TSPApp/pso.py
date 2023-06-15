@@ -30,7 +30,6 @@ class Particle:
     def evaluate_fitness(self, fitness_func):
         self.fitness = fitness_func(self.S)
 
-
 class PSO:
     def __init__(self, num_particles, graph, fitness_func,w,c1,c2):
         self.fitness_func = fitness_func
