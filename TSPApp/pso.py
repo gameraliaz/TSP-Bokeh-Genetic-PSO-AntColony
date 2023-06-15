@@ -20,7 +20,7 @@ class Particle:
             
             self.v[i] = min(max(self.v[i], -len(graph.nodes)), len(graph.nodes))
             
-            self.x[i] = self.x[i] + self.lv[i]
+            self.x[i] = self.x[i] + lv[i]
             
             self.x[i] = min(max(self.x[i], -len(graph.nodes)), len(graph.nodes))
             
