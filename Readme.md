@@ -153,5 +153,13 @@ The heuristic value for every cij:
 ## Results
 The application provides a visual representation of the TSP route found by the chosen algorithm. It plots the cities on a map and connects them according to the optimal route discovered. Additionally, it displays the total distance of the best-found solution.
 
+## Contributing
+
+Contributions are welcome! If you have any ideas, improvements, or bug fixes, please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](License.md) file for more information.
+
 ## Conclusion
 By using this web application, you can experiment with different configurations of the Genetic Algorithm, Particle Swarm Optimization, and Ant Colony Optimization to solve the Traveling Salesman Problem. The customizable parameters and functions allow you to fine-tune the algorithms' behavior and explore the effectiveness of different techniques and methods.
